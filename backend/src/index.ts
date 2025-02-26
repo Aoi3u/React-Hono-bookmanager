@@ -53,6 +53,25 @@ app.post("/books", async (c) => {
   return c.json(newBook);
 });
 
+// ステータスを更新
+app.put("/books/:id", async (c) => {
+  // パラメータからidを取得
+  // パラメータはreq.param()で取得できる
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const status = body.status;
+
+  const book = bookManager.find((book) => book.id === Number(id));
+
+  // 書籍が見つからない場合はエラーを返す
+  if (!book) {
+    return c.json({ error: "書籍が見つかりません" });
+  }
+
+  book.status = status;
+  return c.json(book);
+})
+
 app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
