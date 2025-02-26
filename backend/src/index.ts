@@ -18,6 +18,7 @@ const bookManager: BookManager[] = [
 // キーワード検索した書籍データを取得する
 app.get("/books", async (c) => {
   // キーワードがクエリにあるなら、そのキーワードを含む書籍データを返す
+  // クエリパラメータはreq.query()で取得できる
   const query = c.req.query();
   const keyword = query.keyword;
   if (keyword) {
@@ -26,6 +27,30 @@ app.get("/books", async (c) => {
   }
 
   return c.json(bookManager);
+});
+
+// 書籍データを追加する
+app.post("/books", async (c) => {
+  // リクエストボディから書籍データを取得
+  // リクエストボディはreq.json()で取得できる
+  // awaitを使うためには、関数がasyncである必要がある
+  // awaitはPromiseを返す関数の前につけることで、その関数が完了するまで待つことができる
+  const body = await c.req.json();
+  const name = body.name;
+
+  if (name === "") {
+    return c.json({ error: "書籍名は必須です" });
+  }
+
+  // 新しいBookManagerのオブジェクト
+  const newBook = {
+    id: bookManager.length + 1,
+    name: name,
+    status: "在庫あり",
+  };
+
+  bookManager.push(newBook);
+  return c.json(newBook);
 });
 
 app.get("/", (c) => {
