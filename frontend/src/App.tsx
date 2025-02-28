@@ -37,14 +37,14 @@ function App() {
         throw new Error("Invalid state");
       }
 
-      const action = formData.get("action") as string;
+      const action = formData.get("formType") as string;
 
       const actionHandlers = {
         add: () => handleAddBook(prevState, formData),
         search: () => handleSearchBooks(prevState, formData),
       } as const;
 
-      if (action != "add" && action != "search") {
+      if (action != "add" && action !== "search") {
         throw new Error(`Invalid action: ${action}`);
       }
 
@@ -63,6 +63,7 @@ function App() {
     <>
       <div>
         <form action={updateBookState} ref={addFormRef}>
+          <input type="hidden" name="formType" value="add" />
           <input type="text" name="bookName" placeholder="書籍名" />
           <button type="submit" disabled={isPending}>
             追加
