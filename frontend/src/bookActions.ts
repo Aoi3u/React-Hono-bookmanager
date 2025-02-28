@@ -2,7 +2,8 @@ import { BookManage, BookManageJson, BookState } from "./domain/book";
 
 export const handleAddBook = async (
   prevState: BookState,
-  formData: FormData
+  formData: FormData,
+  updateOptimisticBooks: (prevState: BookManage[]) => void
 ): Promise<BookState> => {
   const name = formData.get("bookName") as string;
 
@@ -10,6 +11,13 @@ export const handleAddBook = async (
     throw new Error("Book name is required");
   }
 
+  updateOptimisticBooks([
+    ...prevState.allBooks,
+    new BookManage(0, name, "在庫あり"),
+  ]);
+
+  // 1秒待機する
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const response = await fetch("http://localhost:8080/books", {
     method: "POST",
     headers: {
@@ -24,11 +32,11 @@ export const handleAddBook = async (
 
   const newBook = await response.json();
 
-// 新しい書籍を追加する
-// 新しい書籍を追加するときは、allBooksとfilteredBooksの両方に追加する
-// filteredBooksは、キーワード検索の結果を保持するための変数
-// キーワード検索の結果を保持するためには、filteredBooksに新しい書籍を追加する必要がある
-// ただし、filteredBooksがnullの場合は、新しい書籍を追加しない
+  // 新しい書籍を追加する
+  // 新しい書籍を追加するときは、allBooksとfilteredBooksの両方に追加する
+  // filteredBooksは、キーワード検索の結果を保持するための変数
+  // キーワード検索の結果を保持するためには、filteredBooksに新しい書籍を追加する必要がある
+  // ただし、filteredBooksがnullの場合は、新しい書籍を追加しない
   return {
     ...prevState,
     allBooks: [...prevState.allBooks, newBook],
@@ -48,10 +56,10 @@ export const handleSearchBooks = async (
     throw new Error("Keyword is required");
   }
 
-// filter関数を使って、キーワードが含まれる書籍だけを残す
-// この処理は、サーバーサイドで行うことができる
-// ただし、サーバーサイドで行う場合は、データの取得に時間がかかるため、
-// クライアントサイドで行うことが一般的
+  // filter関数を使って、キーワードが含まれる書籍だけを残す
+  // この処理は、サーバーサイドで行うことができる
+  // ただし、サーバーサイドで行う場合は、データの取得に時間がかかるため、
+  // クライアントサイドで行うことが一般的
   const response = await fetch(
     `http://localhost:8080/books?keyword=${keyword}`
   );
@@ -69,34 +77,41 @@ export const handleSearchBooks = async (
 
 export const handleUpdateBook = async (
   prevState: BookState,
-  formData: FormData
+  formData: FormData,
+  updateOptimisticBooks: (prevState: BookManage[]) => void
 ): Promise<BookState> => {
-    const id = Number(formData.get("id"));
-    const status = formData.get("status") as string;
+  const id = Number(formData.get("id"));
+  const status = formData.get("status") as string;
 
-    const response = await fetch(`http://localhost:8080/books/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status }),
-    });
+  const response = await fetch(`http://localhost:8080/books/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
 
-    if (!response.ok) {
-      throw new Error("Failed to update book");
-    }
+  if (!response.ok) {
+    throw new Error("Failed to update book");
+  }
 
-    const updatedBook = await response.json();
-    const updatedBooks = prevState.allBooks.map((book) =>
-      book.id === id ? updatedBook : book
-    );
-    const filteredBooks = prevState.filteredBooks?.map((book) =>
-      book.id === id ? updatedBook : book
-    );
+  updateOptimisticBooks(
+    prevState.allBooks.map((book) =>
+      book.id === id ? { ...book, status } : book
+    )
+  );
 
-    return {
-      ...prevState,
-      allBooks: updatedBooks,
-      filteredBooks: filteredBooks || null, 
-    };
+  const updatedBook = await response.json();
+  const updatedBooks = prevState.allBooks.map((book) =>
+    book.id === id ? updatedBook : book
+  );
+  const filteredBooks = prevState.filteredBooks?.map((book) =>
+    book.id === id ? updatedBook : book
+  );
+
+  return {
+    ...prevState,
+    allBooks: updatedBooks,
+    filteredBooks: filteredBooks || null,
+  };
 };

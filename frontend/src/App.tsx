@@ -1,4 +1,4 @@
-import { use, useActionState, useRef } from "react";
+import { use, useActionState, useOptimistic, useRef } from "react";
 import { BookManage, BookManageJson, BookState } from "./domain/book";
 import { handleAddBook, handleSearchBooks, handleUpdateBook } from "./bookActions";
 
@@ -40,9 +40,9 @@ function App() {
       const action = formData.get("formType") as string;
 
       const actionHandlers = {
-        add: () => handleAddBook(prevState, formData),
+        add: () => handleAddBook(prevState, formData, updateOptimisticBooks),
         search: () => handleSearchBooks(prevState, formData),
-        update: () => handleUpdateBook(prevState, formData),
+        update: () => handleUpdateBook(prevState, formData, updateOptimisticBooks),
       } as const;
 
       if (action != "add" && action !== "search" && action !== "update") {
@@ -58,7 +58,9 @@ function App() {
     }
   );
 
-  const books = bookState.filteredBooks || bookState.allBooks;
+  const [optimisticBooks, updateOptimisticBooks] = useOptimistic<BookManage[]>(
+    bookState?.filteredBooks ?? bookState?.allBooks ?? []
+  );
 
   return (
     <>
@@ -79,7 +81,7 @@ function App() {
         </form>
         <div>
           <ul>
-          {books.map((book: BookManage) => {
+            {optimisticBooks.map((book: BookManage) => {
               const bookStatus = book.status;
               return (
                 <li key={book.id}>
