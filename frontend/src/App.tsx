@@ -1,5 +1,6 @@
-import {use} from "react";
-import { BookManage, BookManageJson } from "./domain/book";
+import { use, useActionState, useRef } from "react";
+import { BookManage, BookManageJson, BookState } from "./domain/book";
+import { handleAddBook } from "./bookActions";
 
 // 書籍データを取得する関数
 async function fetchManageBooks() {
@@ -19,13 +20,40 @@ const fetchManageBookPromise = fetchManageBooks();
 function App() {
   // use関数を使って、fetchManageBookPromiseが完了するまで待つ
   const initialBooks = use(fetchManageBookPromise);
+  // useRef関数を使って、フォームの参照を取得
+  // useRef関数は、Reactのrefと同じように、DOM要素を参照するための関数
+  const addFormRef = useRef<HTMLFormElement>(null);
+  // useActionState関数を使って、書籍データの状態を管理
+  const [bookState, updateBookState, isPending] = useActionState(
+    async (
+      // prevStateは前回の状態
+      prevState: BookState | undefined,
+      formData: FormData
+    ): Promise<BookState> => {
+      // prevStateがない場合はエラーを返す
+      if (!prevState) {
+        throw new Error("Invalid state");
+      }
+
+      return handleAddBook(prevState, formData);
+    },
+    {
+      allBooks: initialBooks,
+    }
+  );
 
   return (
     <>
       <div>
+        <form action={updateBookState} ref={addFormRef}>
+          <input type="text" name="bookName" placeholder="書籍名" />
+          <button type="submit" disabled={isPending}>
+            追加
+          </button>
+        </form>
         <div>
           <ul>
-            {initialBooks.map((book: BookManage) => {
+            {bookState.allBooks.map((book: BookManage) => {
               return <li key={book.id}>{book.name}</li>;
             })}
           </ul>
@@ -35,4 +63,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

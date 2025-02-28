@@ -22,7 +22,7 @@ app.use(
   // ここでは、http://localhost:5173からのリクエストを許可している
   // 他のオプションは公式ドキュメントを参照
   cors({
-    origin: ["http://localhost:5175"],
+    origin: ["http://localhost:5173"],
     allowMethods: ["GET", "POST", "PUT", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
     exposeHeaders: ["Content-Length"],
@@ -86,7 +86,7 @@ app.put("/books/:id", async (c) => {
 
   book.status = status;
   return c.json(book);
-})
+});
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");
