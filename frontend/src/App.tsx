@@ -1,6 +1,6 @@
 import { use, useActionState, useRef } from "react";
 import { BookManage, BookManageJson, BookState } from "./domain/book";
-import { handleAddBook, handleSearchBooks } from "./bookActions";
+import { handleAddBook, handleSearchBooks, handleUpdateBook } from "./bookActions";
 
 // 書籍データを取得する関数
 async function fetchManageBooks() {
@@ -42,9 +42,10 @@ function App() {
       const actionHandlers = {
         add: () => handleAddBook(prevState, formData),
         search: () => handleSearchBooks(prevState, formData),
+        update: () => handleUpdateBook(prevState, formData),
       } as const;
 
-      if (action != "add" && action !== "search") {
+      if (action != "add" && action !== "search" && action !== "update") {
         throw new Error(`Invalid action: ${action}`);
       }
 
@@ -78,8 +79,29 @@ function App() {
         </form>
         <div>
           <ul>
-            {books?.map((book: BookManage) => {
-              return <li key={book.id}>{book.name}</li>;
+          {books.map((book: BookManage) => {
+              const bookStatus = book.status;
+              return (
+                <li key={book.id}>
+                  {book.name}
+                  <form action={updateBookState}>
+                    <input type="hidden" name="formType" value="update" />
+                    <input type="hidden" name="id" value={book.id} />
+                    <select
+                      key={`select-${book.id}-${bookStatus}`}
+                      name="status"
+                      defaultValue={bookStatus}
+                      onChange={(e) => {
+                        e.target.form?.requestSubmit();
+                      }}
+                    >
+                      <option value="在庫あり">在庫あり</option>
+                      <option value="貸出中">貸出中</option>
+                      <option value="返却済">返却済</option>
+                    </select>
+                  </form>
+                </li>
+              );
             })}
           </ul>
         </div>
