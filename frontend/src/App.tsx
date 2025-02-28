@@ -1,6 +1,6 @@
 import { use, useActionState, useRef } from "react";
 import { BookManage, BookManageJson, BookState } from "./domain/book";
-import { handleAddBook } from "./bookActions";
+import { handleAddBook, handleSearchBooks } from "./bookActions";
 
 // 書籍データを取得する関数
 async function fetchManageBooks() {
@@ -23,6 +23,8 @@ function App() {
   // useRef関数を使って、フォームの参照を取得
   // useRef関数は、Reactのrefと同じように、DOM要素を参照するための関数
   const addFormRef = useRef<HTMLFormElement>(null);
+  // useRef関数を使って、フォームの参照を取得
+  const searchFormRef = useRef<HTMLFormElement>(null);
   // useActionState関数を使って、書籍データの状態を管理
   const [bookState, updateBookState, isPending] = useActionState(
     async (
@@ -35,12 +37,27 @@ function App() {
         throw new Error("Invalid state");
       }
 
-      return handleAddBook(prevState, formData);
+      const action = formData.get("action") as string;
+
+      const actionHandlers = {
+        add: () => handleAddBook(prevState, formData),
+        search: () => handleSearchBooks(prevState, formData),
+      } as const;
+
+      if (action != "add" && action != "search") {
+        throw new Error(`Invalid action: ${action}`);
+      }
+
+      return actionHandlers[action]();
     },
     {
       allBooks: initialBooks,
+      filteredBooks: null,
+      keyword: "",
     }
   );
+
+  const books = bookState.filteredBooks || bookState.allBooks;
 
   return (
     <>
@@ -51,9 +68,16 @@ function App() {
             追加
           </button>
         </form>
+        <form ref={searchFormRef} action={updateBookState}>
+          <input type="hidden" name="formType" value="search" />
+          <input type="text" name="keyword" placeholder="書籍名で検索" />
+          <button type="submit" disabled={isPending}>
+            検索
+          </button>
+        </form>
         <div>
           <ul>
-            {bookState.allBooks.map((book: BookManage) => {
+            {books?.map((book: BookManage) => {
               return <li key={book.id}>{book.name}</li>;
             })}
           </ul>

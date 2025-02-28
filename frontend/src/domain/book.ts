@@ -10,4 +10,6 @@ export type BookManageJson = {
 
 export type BookState = {
     allBooks: BookManage[];
+    filteredBooks: BookManage[] | null;
+    keyword: string;
 };
